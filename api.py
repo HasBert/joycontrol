@@ -37,3 +37,10 @@ async def connect_controller(controller_name: str, q: Union[str, None] = None):
 async def disconnect_controller():
     await controllerService.close()
     return {"status": "ok"}
+
+
+@app.post("/joymon/start/acetournament")
+async def start_acetournament():
+    await controllerService.test_pokemon()
+
+    return {"Hello": "World"}

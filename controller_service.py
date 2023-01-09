@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
-
-import argparse
-import asyncio
 import logging
 import os
+import asyncio
 
 from aioconsole import ainput
 
 import joycontrol.debug as debug
 from joycontrol import logging_default as log, utils
-from joycontrol.command_line_interface import ControllerCLI
 from joycontrol.controller import Controller
 from joycontrol.controller_state import ControllerState, button_push, button_press, button_release
 from joycontrol.memory import FlashMemory
 from joycontrol.protocol import controller_protocol_factory
 from joycontrol.server import create_hid_server
-from joycontrol.nfc_tag import NFCTag
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +30,35 @@ class ControllerService:
         logger.info('Stopping communication...')
         await self.transport.close()
         self.transport = None
+
+    async def test_pokemon(self):
+        """
+        Example controller script.
+        Navigates to the "Test Controller Buttons" menu and presses all buttons.
+        """
+        if self.controller_state.get_controller() != Controller.PRO_CONTROLLER:
+            raise ValueError('This script only works with the Pro Controller!')
+
+        # waits until controller is fully connected
+        await self.controller_state.connect()
+
+        user_input = asyncio.ensure_future(
+            ainput(prompt='Starting to make $$$! Press <enter> to stop.')
+        )
+        # push all buttons consecutively until user input
+        while not user_input.done():
+            await button_push(self.controller_state, 'A')
+
+            await asyncio.sleep(0.5)
+
+            if user_input.done():
+                break
+
+        # await future to trigger exceptions in case something went wrong
+        await user_input
+
+        await button_push(self.controller_state, 'X')
+        await button_push(self.controller_state, 'A')
 
     async def connect_controller(self, args):
         # check if root

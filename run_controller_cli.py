@@ -168,35 +168,6 @@ async def test_pokemon(controller_state: ControllerState):
 
     await button_push(controller_state, 'X')
     await button_push(controller_state, 'A')
-    """
-    # We assume we are in the "Change Grip/Order" menu of the switch
-    await button_push(controller_state, 'home')
-
-    # wait for the animation
-    await asyncio.sleep(1)
-    """
-
-    # Goto settings
-    await button_push(controller_state, 'down', sec=1)
-
-    user_input = asyncio.ensure_future(
-        ainput(prompt='Starting battle! Press <enter> to stop.')
-    )
-
-    # push all buttons consecutively until user input
-    # while not user_input.done():
-    #     for button in button_list:
-    #         await button_push(controller_state, button)
-    #         await asyncio.sleep(0.1)
-
-    #         if user_input.done():
-    #             break
-
-    # await future to trigger exceptions in case something went wrong
-    await user_input
-
-    # go back to home
-    await button_push(controller_state, 'home')
 
 
 def ensure_valid_button(controller_state, *buttons):
