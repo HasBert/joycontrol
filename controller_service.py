@@ -32,9 +32,17 @@ class ControllerService:
         await self.transport.close()
         self.transport = None
 
-    async def connect_controller(self, controller_name):
+    async def connect_controller(self, args):
+        # check if root
+        if not os.geteuid() == 0:
+            raise PermissionError('Script must run as root!')
+
+        # setup logging
+        # log.configure(console_level=logging.ERROR)
+        log.configure()
+
         # Get controller name to emulate from arguments
-        controller = Controller.from_arg(controller_name)
+        controller = Controller.from_arg(args.controller)
 
         # parse the spi flash
         if args.spi_flash:
@@ -53,7 +61,7 @@ class ControllerService:
                                                           ctl_psm=ctl_psm,
                                                           itr_psm=itr_psm, capture_file=capture_file,
                                                           device_id=args.device_id,
-                                                          interactive=True)
+                                                          interactive=False)
 
             self.transport = transport
             self.controller_state = protocol.get_controller_state()

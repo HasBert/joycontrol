@@ -1,10 +1,9 @@
 import logging
 
 from typing import Union
-
 from fastapi import FastAPI
-
 from controller_service import ControllerService
+from argparse import Namespace
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,13 @@ def read_root():
 
 @app.get("/joymon/connect/{controller_name}")
 async def connect_controller(controller_name: str, q: Union[str, None] = None):
-    await controllerService.connect_controller(controller_name)
+
+    args = Namespace(controller=controller_name,
+                     spi_flash=None,
+                     reconnect_bt_addr=None,
+                     log=None,
+                     device_id=None)
+    await controllerService.connect_controller(args)
     return {"controller_name": controller_name, "q": q}
 
 

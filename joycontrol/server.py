@@ -10,7 +10,8 @@ from joycontrol.device import HidDevice
 from joycontrol.report import InputReport
 from joycontrol.transport import L2CAP_Transport
 
-PROFILE_PATH = pkg_resources.resource_filename('joycontrol', 'profile/sdp_record_hid.xml')
+PROFILE_PATH = pkg_resources.resource_filename(
+    'joycontrol', 'profile/sdp_record_hid.xml')
 logger = logging.getLogger(__name__)
 
 
@@ -19,6 +20,7 @@ async def _send_empty_input_reports(transport):
     for i in range(10):
         await transport.write(report)
         await asyncio.sleep(1)
+
 
 async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=None, reconnect_bt_addr=None,
                             capture_file=None, interactive=False):
@@ -44,7 +46,7 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
     hid = HidDevice(device_id=device_id)
 
     bt_addr = hid.get_address()
-    #if bt_addr[:8] != "94:58:CB":
+    # if bt_addr[:8] != "94:58:CB":
     #    await hid.set_address("94:58:CB" + bt_addr[8:], interactive=interactive)
     #    bt_addr = hid.get_address()
 
@@ -55,19 +57,26 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
                 print("try modifieing /lib/systemd/system/bluetooth.service and see")
                 print("https://github.com/Poohl/joycontrol/issues/4 if it doesn't work")
             for sw in hid.get_paired_switches():
-                print(f"Warning: a switch ({sw}) was found paired, do you want to unpair it?")
+                print(
+                    f"Warning: a switch ({sw}) was found paired, do you want to unpair it?")
                 i = input("y/n [y]: ")
                 if i == '' or i == 'y' or i == 'Y':
                     hid.unpair_path(sw)
         else:
             if len(hid.get_UUIDs()) > 3:
-                logger.warning("detected too many SDP-records. Switch might refuse connection.")
-            b = hid.get_paired_switches()
-            if b:
-                logger.warning(f"Attempting initial pairing, but switches are paired: {b}")
+                logger.warning(
+                    "detected too many SDP-records. Switch might refuse connection.")
+            # b = hid.get_paired_switches()
+            for sw in hid.get_paired_switches():
+                hid.unpair_path(sw)
 
-        ctl_sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
-        itr_sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+            # if b:
+            #     logger.warning(f"Attempting initial pairing, but switches are paired: {b}")
+
+        ctl_sock = socket.socket(
+            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+        itr_sock = socket.socket(
+            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
         ctl_sock.setblocking(False)
         itr_sock.setblocking(False)
         ctl_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -114,7 +123,8 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
         # set the device class to "Gamepad/joystick"
         await hid.set_class()
 
-        logger.info('Waiting for Switch to connect... Please open the "Change Grip/Order" menu.')
+        logger.info(
+            'Waiting for Switch to connect... Please open the "Change Grip/Order" menu.')
 
         loop = asyncio.get_event_loop()
         client_ctl, ctl_address = await loop.sock_accept(ctl_sock)
@@ -132,7 +142,8 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
             paths = hid.get_paired_switches()
             path = ""
             if not paths:
-                logger.fatal("couldn't find paired switch to reconnect to, terminating...")
+                logger.fatal(
+                    "couldn't find paired switch to reconnect to, terminating...")
                 exit(1)
             elif len(paths) > 1:
                 if interactive:
@@ -146,7 +157,8 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
                         path = paths[int(choice)-1]
                 else:
                     path = paths[0]
-                    logger.warning(f"Automatic reconnect address chose {path} out of {paths}")
+                    logger.warning(
+                        f"Automatic reconnect address chose {path} out of {paths}")
             else:
                 path = paths[0]
                 logger.info(f"auto detected paired switch {path}")
@@ -155,8 +167,10 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
             # Todo: figure out if we're actually paired
             pass
         # Reconnection to reconnect_bt_addr
-        client_ctl = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
-        client_itr = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+        client_ctl = socket.socket(
+            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+        client_itr = socket.socket(
+            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
         client_ctl.connect((reconnect_bt_addr, ctl_psm))
         client_itr.connect((reconnect_bt_addr, itr_psm))
         client_ctl.setblocking(False)
@@ -168,7 +182,8 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
     client_ctl.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 0)
     client_itr.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 0)
     # create transport for the established connection and activate the HID protocol
-    transport = L2CAP_Transport(asyncio.get_event_loop(), protocol, client_itr, client_ctl, 50, capture_file=capture_file)
+    transport = L2CAP_Transport(asyncio.get_event_loop(
+    ), protocol, client_itr, client_ctl, 50, capture_file=capture_file)
     protocol.connection_made(transport)
 
     # HACK: send some empty input reports until the Switch decides to reply
