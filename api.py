@@ -3,10 +3,10 @@ import logging
 from typing import Union
 
 from fastapi import FastAPI
+
 from controller_service import ControllerService
 
 logger = logging.getLogger(__name__)
-
 
 app = FastAPI()
 

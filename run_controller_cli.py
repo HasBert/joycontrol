@@ -416,7 +416,7 @@ async def _main(args):
 if __name__ == '__main__':
     # check if root
     if not os.geteuid() == 0:
-        raise PermissionError('Script must be run as root!')
+        raise PermissionError('Script must run as root!')
 
     # setup logging
     # log.configure(console_level=logging.ERROR)
