@@ -22,7 +22,8 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "api:app"
+                "api:app",
+                "--reload"
             ],
             "jinja": true,
             "justMyCode": true,

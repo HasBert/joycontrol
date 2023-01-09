@@ -22,14 +22,18 @@ async def connect_controller(controller_name: str, q: Union[str, None] = None):
 
     args = Namespace(controller=controller_name,
                      spi_flash=None,
-                     reconnect_bt_addr=None,
+                     reconnect_bt_addr="auto",
                      log=None,
                      device_id=None)
+    # last = controllerService.get_last_switch_address()
+    # if last is not None:
+    #     args.reconnect_bt_addr()
+
     await controllerService.connect_controller(args)
     return {"controller_name": controller_name, "q": q}
 
 
 @app.get("/joymon/disconnect")
-async def disconnect_controller(item_id: int, q: Union[str, None] = None):
+async def disconnect_controller():
     await controllerService.close()
-    return {"item_id": item_id, "q": q}
+    return {"status": "ok"}

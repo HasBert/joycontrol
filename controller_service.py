@@ -25,7 +25,10 @@ class ControllerService:
     def __init__(self):
         self.controller_state = None
         self.transport = None
-        self.protocol = None
+        self.last_switch_address = None
+
+    def get_last_switch_address(self):
+        return self.last_switch_address
 
     async def close(self):
         logger.info('Stopping communication...')
@@ -64,4 +67,5 @@ class ControllerService:
                                                           interactive=False)
 
             self.transport = transport
+            self.last_switch_address = transport.get_extra_info('peername')
             self.controller_state = protocol.get_controller_state()

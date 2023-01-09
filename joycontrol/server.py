@@ -67,6 +67,7 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
                 logger.warning(
                     "detected too many SDP-records. Switch might refuse connection.")
             # b = hid.get_paired_switches()
+            logger.info("unpairing all devices.")
             for sw in hid.get_paired_switches():
                 hid.unpair_path(sw)
 
