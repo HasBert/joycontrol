@@ -138,6 +138,67 @@ async def test_controller_buttons(controller_state: ControllerState):
     await button_push(controller_state, 'home')
 
 
+async def test_pokemon(controller_state: ControllerState):
+    """
+    Example controller script.
+    Navigates to the "Test Controller Buttons" menu and presses all buttons.
+    """
+    if controller_state.get_controller() != Controller.PRO_CONTROLLER:
+        raise ValueError('This script only works with the Pro Controller!')
+
+    # waits until controller is fully connected
+    await controller_state.connect()
+
+    await ainput(prompt='Make sure you are in front of the ace tournament dude and press <enter> to continue.')
+
+    user_input = asyncio.ensure_future(
+        ainput(prompt='Starting to make $$$! Press <enter> to stop.')
+    )
+    # push all buttons consecutively until user input
+    while not user_input.done():
+        await button_push(controller_state, 'A')
+
+        await asyncio.sleep(0.5)
+
+        if user_input.done():
+            break
+
+    # await future to trigger exceptions in case something went wrong
+    await user_input
+
+    await button_push(controller_state, 'X')
+    await button_push(controller_state, 'A')
+    """
+    # We assume we are in the "Change Grip/Order" menu of the switch
+    await button_push(controller_state, 'home')
+
+    # wait for the animation
+    await asyncio.sleep(1)
+    """
+
+    # Goto settings
+    await button_push(controller_state, 'down', sec=1)
+
+    user_input = asyncio.ensure_future(
+        ainput(prompt='Starting battle! Press <enter> to stop.')
+    )
+
+    # push all buttons consecutively until user input
+    # while not user_input.done():
+    #     for button in button_list:
+    #         await button_push(controller_state, button)
+    #         await asyncio.sleep(0.1)
+
+    #         if user_input.done():
+    #             break
+
+    # await future to trigger exceptions in case something went wrong
+    await user_input
+
+    # go back to home
+    await button_push(controller_state, 'home')
+
+
 def ensure_valid_button(controller_state, *buttons):
     """
     Raise ValueError if any of the given buttons os not part of the controller state.
@@ -146,7 +207,8 @@ def ensure_valid_button(controller_state, *buttons):
     """
     for button in buttons:
         if button not in controller_state.button_state.get_available_buttons():
-            raise ValueError(f'Button {button} does not exist on {controller_state.get_controller()}')
+            raise ValueError(
+                f'Button {button} does not exist on {controller_state.get_controller()}')
 
 
 async def mash_button(controller_state, button, interval):
@@ -155,7 +217,8 @@ async def mash_button(controller_state, button, interval):
     ensure_valid_button(controller_state, button)
 
     user_input = asyncio.ensure_future(
-        ainput(prompt=f'Pressing the {button} button every {interval} seconds... Press <enter> to stop.')
+        ainput(
+            prompt=f'Pressing the {button} button every {interval} seconds... Press <enter> to stop.')
     )
     # push a button repeatedly until user input
     while not user_input.done():
@@ -164,6 +227,7 @@ async def mash_button(controller_state, button, interval):
 
     # await future to trigger exceptions in case something went wrong
     await user_input
+
 
 def _register_commands_with_controller_state(controller_state, cli):
     """
@@ -189,7 +253,8 @@ def _register_commands_with_controller_state(controller_state, cli):
             mash <button> <interval>
         """
         if not len(args) == 2:
-            raise ValueError('"mash_button" command requires a button and interval as arguments!')
+            raise ValueError(
+                '"mash_button" command requires a button and interval as arguments!')
 
         button, interval = args
         await mash_button(controller_state, button, interval)
@@ -247,7 +312,7 @@ def _register_commands_with_controller_state(controller_state, cli):
         ensure_valid_button(controller_state, *args)
 
         # wait until controller is fully connected
-        await controller_state.connect()
+        await controller_state.co_register_pokemon_commands_with_controller_statennect()
         await button_release(controller_state, *args)
 
     cli.add_command(release.__name__, release)
@@ -261,11 +326,12 @@ def _register_commands_with_controller_state(controller_state, cli):
             nfc <file_name>          Set controller state NFC content to file
             nfc remove               Remove NFC content from controller state
         """
-        #logger.error('NFC Support was removed from joycontrol - see https://github.com/mart1nro/joycontrol/issues/80')
+        # logger.error('NFC Support was removed from joycontrol - see https://github.com/mart1nro/joycontrol/issues/80')
         if controller_state.get_controller() == Controller.JOYCON_L:
             raise ValueError('NFC content cannot be set for JOYCON_L')
         elif not args:
-            raise ValueError('"nfc" command requires file path to an nfc dump or "remove" as argument!')
+            raise ValueError(
+                '"nfc" command requires file path to an nfc dump or "remove" as argument!')
         elif args[0] == 'remove':
             controller_state.set_nfc(None)
             print('Removed nfc content.')
@@ -291,6 +357,17 @@ def _register_commands_with_controller_state(controller_state, cli):
 
     cli.add_command(unpause.__name__, unpause)
 
+
+def _register_pokemon_commands_with_controller_state(controller_state, cli):
+    async def pokemon():
+        """
+        test_buttons - Navigates to the "Test Controller Buttons" menu and presses all buttons.
+        """
+        await test_pokemon(controller_state)
+
+    cli.add_command(pokemon.__name__, pokemon)
+
+
 async def _main(args):
     # Get controller name to emulate from arguments
     controller = Controller.from_arg(args.controller)
@@ -303,10 +380,10 @@ async def _main(args):
         # Create memory containing default controller stick calibration
         spi_flash = FlashMemory()
 
-
     with utils.get_output(path=args.log, default=None) as capture_file:
         # prepare the the emulated controller
-        factory = controller_protocol_factory(controller, spi_flash=spi_flash, reconnect = args.reconnect_bt_addr)
+        factory = controller_protocol_factory(
+            controller, spi_flash=spi_flash, reconnect=args.reconnect_bt_addr)
         ctl_psm, itr_psm = 17, 19
         transport, protocol = await create_hid_server(factory, reconnect_bt_addr=args.reconnect_bt_addr,
                                                       ctl_psm=ctl_psm,
@@ -319,7 +396,9 @@ async def _main(args):
         # Create command line interface and add some extra commands
         cli = ControllerCLI(controller_state)
         _register_commands_with_controller_state(controller_state, cli)
-        cli.add_command('amiibo', ControllerCLI.deprecated('Command was removed - use "nfc" instead!'))
+        _register_pokemon_commands_with_controller_state(controller_state, cli)
+        cli.add_command('amiibo', ControllerCLI.deprecated(
+            'Command was removed - use "nfc" instead!'))
         cli.add_command(debug.debug.__name__, debug.debug)
 
         # set default nfc content supplied by argument
@@ -340,17 +419,21 @@ if __name__ == '__main__':
         raise PermissionError('Script must be run as root!')
 
     # setup logging
-    #log.configure(console_level=logging.ERROR)
+    # log.configure(console_level=logging.ERROR)
     log.configure()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('controller', help='JOYCON_R, JOYCON_L or PRO_CONTROLLER')
+    parser.add_argument(
+        'controller', help='JOYCON_R, JOYCON_L or PRO_CONTROLLER')
     parser.add_argument('-l', '--log', help="BT-communication logfile output")
-    parser.add_argument('-d', '--device_id', help='not fully working yet, the BT-adapter to use')
-    parser.add_argument('--spi_flash', help="controller SPI-memory dump to use")
+    parser.add_argument('-d', '--device_id',
+                        help='not fully working yet, the BT-adapter to use')
+    parser.add_argument(
+        '--spi_flash', help="controller SPI-memory dump to use")
     parser.add_argument('-r', '--reconnect_bt_addr', type=str, default=None,
                         help='The Switch console Bluetooth address (or "auto" for automatic detection), for reconnecting as an already paired controller.')
-    parser.add_argument('--nfc', type=str, default=None, help="amiibo dump placed on the controller. Äquivalent to the nfc command.")
+    parser.add_argument('--nfc', type=str, default=None,
+                        help="amiibo dump placed on the controller. Äquivalent to the nfc command.")
     args = parser.parse_args()
 
     loop = asyncio.get_event_loop()
