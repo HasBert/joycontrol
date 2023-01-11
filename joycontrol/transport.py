@@ -16,8 +16,9 @@ logger = logging.getLogger(__name__)
 class NotConnectedError(ConnectionResetError):
     pass
 
+
 class L2CAP_Transport(asyncio.Transport):
-    def __init__(self, loop, protocol, itr_sock, ctr_sock, read_buffer_size, capture_file=None, flow_control = 4) -> None:
+    def __init__(self, loop, protocol, itr_sock, ctr_sock, read_buffer_size, capture_file=None, flow_control=4) -> None:
         super(L2CAP_Transport, self).__init__()
 
         self._loop = loop
@@ -39,33 +40,39 @@ class L2CAP_Transport(asyncio.Transport):
         # writing control
         self._write_lock = asyncio.Event()
         self._write_lock.set()
-        self._write_lock_thread = utils.start_asyncio_thread(self._write_lock_monitor(), ignore=asyncio.CancelledError)
+        self._write_lock_thread = utils.start_asyncio_thread(
+            self._write_lock_monitor(), ignore=asyncio.CancelledError)
         self._write_window = MyBoundedSemaphore(flow_control)
-        self._write_window_thread = utils.start_asyncio_thread(self._write_window_monitor(), ignore=asyncio.CancelledError)
+        self._write_window_thread = utils.start_asyncio_thread(
+            self._write_window_monitor(), ignore=asyncio.CancelledError)
 
         # reading control
         self._read_buffer_size = read_buffer_size
         self._is_reading = asyncio.Event()
         self._is_reading.set()
-        self._read_thread = utils.start_asyncio_thread(self._reader(), ignore=asyncio.CancelledError)
+        self._read_thread = utils.start_asyncio_thread(
+            self._reader(), ignore=asyncio.CancelledError)
 
     async def _write_window_monitor(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as hci:
             hci.bind((0,))
             hci.setblocking(False)
             # 0x04 = HCI_EVT; 0x13 = Number of completed packets
-            hci.setsockopt(socket.SOL_HCI, socket.HCI_FILTER, struct.pack("IIIh2x", 1 << 0x04, (1 << 0x13), 0, 0))
+            hci.setsockopt(socket.SOL_HCI, socket.HCI_FILTER,
+                           struct.pack("IIIh2x", 1 << 0x04, (1 << 0x13), 0, 0))
 
             while True:
                 data = await self._loop.sock_recv(hci, 10)
-                self._write_window.release(data[6] + data[7] * 0x100, best_effort=True)
+                self._write_window.release(
+                    data[6] + data[7] * 0x100, best_effort=True)
 
     async def _write_lock_monitor(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as hci:
             hci.bind((0,))
             hci.setblocking(False)
             # 0x04 = HCI_EVT; 0x1b = Max Slots Change
-            hci.setsockopt(socket.SOL_HCI, socket.HCI_FILTER, struct.pack("IIIh2x", 1 << 0x04, (1 << 0x1b), 0, 0))
+            hci.setsockopt(socket.SOL_HCI, socket.HCI_FILTER,
+                           struct.pack("IIIh2x", 1 << 0x04, (1 << 0x1b), 0, 0))
             while True:
                 data = await self._loop.sock_recv(hci, 10)
                 if data[5] < 5:
@@ -75,7 +82,10 @@ class L2CAP_Transport(asyncio.Transport):
 
     async def _reader(self):
         while True:
-            await self._protocol.report_received(await self.read(), self._itr_sock.getpeername())
+            try:
+                await self._protocol.report_received(await self.read(), self._itr_sock.getpeername())
+            except:
+                lol = ''
 
     async def read(self):
         """
@@ -153,15 +163,16 @@ class L2CAP_Transport(asyncio.Transport):
     def can_write_eof():
         return False
 
-    def get_write_buffer_size():
+    def get_write_buffer_size(self):
         return self._write_window.get_aquired()
 
-    def get_write_buffer_limits():
+    def get_write_buffer_limits(self):
         return (0, self._write_window.get_limit())
 
-    def set_write_buffer_limits(high=None, low=None):
+    def set_write_buffer_limits(self, high=None, low=None):
         if low:
-            raise NotImplementedError("Cannot set a lower bound for in flight data...")
+            raise NotImplementedError(
+                "Cannot set a lower bound for in flight data...")
 
         self._write_window.set_limit(high)
 
@@ -190,7 +201,7 @@ class L2CAP_Transport(asyncio.Transport):
             logger.error(err)
             self._protocol.connection_lost()
 
-    async def writelines(*data):
+    async def writelines(self, *data):
         for d in data:
             await self.write(data)
 

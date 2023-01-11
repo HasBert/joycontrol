@@ -21,7 +21,10 @@ class ControllerService:
     def __init__(self):
         self.controller_state = None
         self.transport = None
+
+        # lol
         self.last_switch_address = None
+        self.is_controller_free = True
 
     def get_last_switch_address(self):
         return self.last_switch_address
@@ -32,35 +35,33 @@ class ControllerService:
         self.transport = None
 
     async def test_pokemon(self):
-        """
-        Example controller script.
-        Navigates to the "Test Controller Buttons" menu and presses all buttons.
-        """
         if self.controller_state.get_controller() != Controller.PRO_CONTROLLER:
             raise ValueError('This script only works with the Pro Controller!')
 
         # waits until controller is fully connected
         await self.controller_state.connect()
 
-        user_input = asyncio.ensure_future(
-            ainput(prompt='Starting to make $$$! Press <enter> to stop.')
-        )
+        # asyncio.ensure_future
+
+        # user_input = asyncio.ensure_future(
+        #     ainput(prompt='Starting to make $$$! Press <enter> to stop.')
+        # )
         # push all buttons consecutively until user input
-        while not user_input.done():
+        while not self.is_controller_free:
             await button_push(self.controller_state, 'A')
 
             await asyncio.sleep(0.5)
 
-            if user_input.done():
-                break
-
         # await future to trigger exceptions in case something went wrong
-        await user_input
+        # await user_input
 
         await button_push(self.controller_state, 'X')
         await button_push(self.controller_state, 'A')
 
-    async def connect_controller(self, args):
+    def stop_current_action(self):
+        self.is_controller_free = True
+
+    async def connect(self, args):
         # check if root
         if not os.geteuid() == 0:
             raise PermissionError('Script must run as root!')
@@ -92,5 +93,6 @@ class ControllerService:
                                                           interactive=False)
 
             self.transport = transport
-            self.last_switch_address = transport.get_extra_info('peername')
+            # self.last_switch_address = transport.get_extra_info('peername')
             self.controller_state = protocol.get_controller_state()
+            self.is_controller_free = False
