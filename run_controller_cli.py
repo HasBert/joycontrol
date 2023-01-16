@@ -192,13 +192,19 @@ async def pokemon_wonder_trade(controller_state: ControllerState):
         # to top
         await button_push(controller_state, 'up', sec=3)
         await button_push(controller_state, 'down')
+        await asyncio.sleep(0.3)
         await button_push(controller_state, 'down')
+        await asyncio.sleep(0.3)
         await button_push(controller_state, 'down')
+        await asyncio.sleep(0.3)
         await button_push(controller_state, 'A')
         await asyncio.sleep(5)
         await button_push(controller_state, 'down')
+        await asyncio.sleep(0.3)
         await button_push(controller_state, 'down')
+        await asyncio.sleep(0.3)
         await button_push(controller_state, 'down')
+        await asyncio.sleep(0.3)
         await button_push(controller_state, 'A')
 
     def boxCoordGeneratorFun():
