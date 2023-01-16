@@ -450,13 +450,21 @@ def _register_commands_with_controller_state(controller_state, cli):
 
 
 def _register_pokemon_commands_with_controller_state(controller_state, cli):
-    async def pokemon():
+    async def pokemonAce():
         """
         test_buttons - Navigates to the "Test Controller Buttons" menu and presses all buttons.
         """
-        await test_pokemon(controller_state)
+        await pokemon_ace_tournament(controller_state)
 
-    cli.add_command(pokemon.__name__, pokemon)
+    cli.add_command('pokemon:ace', pokemonAce)
+
+    async def pokemonWonder():
+        """
+        test_buttons - Navigates to the "Test Controller Buttons" menu and presses all buttons.
+        """
+        await pokemon_wonder_trade(controller_state)
+
+    cli.add_command('pokemon:wonder', pokemonWonder)
 
 
 async def _main(args):
