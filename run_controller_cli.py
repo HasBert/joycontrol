@@ -138,7 +138,7 @@ async def test_controller_buttons(controller_state: ControllerState):
     await button_push(controller_state, 'home')
 
 
-async def test_pokemon(controller_state: ControllerState):
+async def pokemon_ace_tournament(controller_state: ControllerState):
     """
     Example controller script.
     Navigates to the "Test Controller Buttons" menu and presses all buttons.
@@ -159,6 +159,97 @@ async def test_pokemon(controller_state: ControllerState):
         await button_push(controller_state, 'A')
 
         await asyncio.sleep(0.5)
+
+        if user_input.done():
+            break
+
+    # await future to trigger exceptions in case something went wrong
+    await user_input
+
+    await button_push(controller_state, 'X')
+    await button_push(controller_state, 'A')
+    """
+    # We assume we are in the "Change Grip/Order" menu of the switch
+    await button_push(controller_state, 'home')
+
+    # wait for the animation
+    await asyncio.sleep(1)
+    """
+
+    # Goto settings
+    await button_push(controller_state, 'down', sec=1)
+
+    user_input = asyncio.ensure_future(
+        ainput(prompt='Starting battle! Press <enter> to stop.')
+    )
+
+    # push all buttons consecutively until user input
+    # while not user_input.done():
+    #     for button in button_list:
+    #         await button_push(controller_state, button)
+    #         await asyncio.sleep(0.1)
+
+    #         if user_input.done():
+    #             break
+
+    # await future to trigger exceptions in case something went wrong
+    await user_input
+
+    # go back to home
+    await button_push(controller_state, 'home')
+
+
+async def pokemon_wonder_trade(controller_state: ControllerState):
+    """
+    Makes the wonder trade for you.
+    """
+    if controller_state.get_controller() != Controller.PRO_CONTROLLER:
+        raise ValueError('This script only works with the Pro Controller!')
+
+    # waits until controller is fully connected
+    await controller_state.connect()
+
+    await ainput(prompt='Press <enter> to continue.')
+
+    user_input = asyncio.ensure_future(
+        ainput(prompt='Starting wonder trade! Press <enter> to stop.')
+    )
+
+    async def toWonderTade():
+        await button_push(controller_state, 'X')
+        await asyncio.sleep(1)
+        # to top
+        await button_push(controller_state, 'up', sec=3)
+        await button_push(controller_state, 'down')
+        await button_push(controller_state, 'down')
+        await button_push(controller_state, 'down')
+        await button_push(controller_state, 'A')
+        await asyncio.sleep(5)
+        await button_push(controller_state, 'down')
+        await button_push(controller_state, 'down')
+        await button_push(controller_state, 'down')
+        await button_push(controller_state, 'A')
+
+    def boxCoordGeneratorFun():
+        for col in range(0, 5):
+            for row in range(0, 4):
+                print((col, row))
+                yield (col, row)
+
+    async def goToCoord(col, row):
+        for i in range(0, col):
+            await button_push(controller_state, 'right')
+
+        for j in range(0, row):
+            await button_push(controller_state, 'down')
+
+    boxCoord = boxCoordGeneratorFun()
+
+    while not user_input.done():
+
+        await toWonderTade()
+
+        # await goToCoord(next(boxCoord))
 
         if user_input.done():
             break
